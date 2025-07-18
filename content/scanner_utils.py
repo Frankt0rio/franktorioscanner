@@ -25,7 +25,7 @@ def init_tray_icon(app):
     global tray_icon
     if tray_icon is None:
         tray_icon = QSystemTrayIcon(app)
-        icon_path = resource_path("icon.png")  # Adjust your icon filename here
+        icon_path = resource_path("content/FranktorioScannerIcon.ico")
         tray_icon.setIcon(QIcon(icon_path))
         tray_icon.setVisible(True)
 
