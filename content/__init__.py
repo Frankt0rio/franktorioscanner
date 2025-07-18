@@ -1,2 +1,2 @@
 from . import app
-from . import scanner_functions
+from . import scanner_utils

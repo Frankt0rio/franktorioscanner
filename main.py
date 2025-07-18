@@ -4,15 +4,20 @@ import content
 
 app = QApplication(sys.argv)
 
-# Create UI window instance from content.app
+# Create UI window instance
 window = content.app.PressureScannerUI()
 
+# Create signal instance and connect it to UI
+signals = content.app.UISignals()
+signals.log_message.connect(window.add_console_line)
 
-# Connect the UI window instance to scanner_functions
-content.scanner_functions.ui_window = window
+# Pass them to scanner_utils
+content.scanner_utils.ui_window = window
+content.scanner_utils.signals = signals
 
 # Bind the buttons
-window.start_btn.clicked.connect(content.scanner_functions.start_scan)
+window.start_btn.clicked.connect(content.scanner_utils.start_scan)
+window.stop_btn.clicked.connect(content.scanner_utils.stop_scan)
 
 
 window.show()

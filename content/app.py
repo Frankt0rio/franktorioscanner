@@ -6,7 +6,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtCore import Qt, QByteArray
 from PyQt5.QtGui import QPixmap, QImage
+from PyQt5.QtCore import pyqtSignal, QObject
 
+class UISignals(QObject):
+    log_message = pyqtSignal(str)
 
 
 class SquareImageBox(QWidget):
@@ -46,6 +49,7 @@ class PressureScannerUI(QWidget):
         self.setWindowTitle("Franktorio's Research Scanner")
         self.resize(900, 550)
 
+        self.VERSION = "1.0.0"
         self.index = 0
 
         grid = QGridLayout()
@@ -297,7 +301,7 @@ class PressureScannerUI(QWidget):
 
     def update_uptime(self, seconds: int):
         hrs = seconds // 3600
-        mins = (seconds % 3600) % 60
+        mins = (seconds % 3600) // 60
         secs = seconds % 60
         self.uptime_value.setText(f"{hrs:02}:{mins:02}:{secs:02}")
 
