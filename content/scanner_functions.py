@@ -4,6 +4,8 @@
 
 import os
 
+ui_window = None
+
 logs_folder = os.path.join(os.getenv("LOCALAPPDATA"), "Roblox", "logs")
 def get_latest_log(logs_folder=logs_folder, return_file_name=False):
     """
@@ -29,5 +31,16 @@ def get_latest_log(logs_folder=logs_folder, return_file_name=False):
             latest_file = file
 
     return (latest_file_path, latest_file) if return_file_name else latest_file_path
+
+def start_scan():
+    """
+    Starts the scanner by retrieving the latest log file and calling the scan function
+    """
+    latest_log = get_latest_log()
+    if not latest_log:
+        print("No log files found.")
+        return
+    
+    ui_window.add_console_line("Starting scan...")
 
 

@@ -12,7 +12,7 @@ from PyQt5.QtGui import QPixmap, QImage
 class SquareImageBox(QWidget):
     def __init__(self):
         super().__init__()
-        # === Constant variables ===
+
         self.label = QLabel("No Image Loaded")
         self.label.setAlignment(Qt.AlignCenter)
         self.label.setStyleSheet(
@@ -45,6 +45,8 @@ class PressureScannerUI(QWidget):
         super().__init__()
         self.setWindowTitle("Franktorio's Research Scanner")
         self.resize(900, 550)
+
+        self.index = 0
 
         grid = QGridLayout()
         grid.setSpacing(12)
@@ -305,8 +307,9 @@ class PressureScannerUI(QWidget):
     def update_server_location(self, location: str):
         self.server_value.setText(location)
 
-    def add_console_line(self, index: int, message: str):
-        self.console_log.append(f"[{index:03}] {message}")
+    def add_console_line(self, message: str):
+        self.console_log.append(f"[{self.index:03}] {message}")
+        self.index += 1
 
     def update_room_title(self, name: str):
         self.room_name_label.setText(f"Room name: {name}")
