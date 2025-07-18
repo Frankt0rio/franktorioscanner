@@ -2,7 +2,6 @@ import sys
 from PyQt5.QtWidgets import QApplication
 import content
 
-
 app = QApplication(sys.argv)
 
 # Create UI window instance from content.app
