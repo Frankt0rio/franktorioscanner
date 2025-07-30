@@ -8,9 +8,13 @@ from PyQt5.QtCore import Qt, QByteArray
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import pyqtSignal, QObject
 
+RESIZE_MARGIN = 6
+
 class UISignals(QObject):
     log_message = pyqtSignal(str)
-
+    update_players_signal = pyqtSignal(int)
+    update_server_location_signal = pyqtSignal(str)
+    update_uptime_signal = pyqtSignal(int)
 
 class SquareImageBox(QWidget):
     def __init__(self):
@@ -46,23 +50,88 @@ class SquareImageBox(QWidget):
 class PressureScannerUI(QWidget):
     def __init__(self):
         super().__init__()
+        self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle("Franktorio's Research Scanner")
-        self.resize(900, 550)
+        self.resize(1200, 800)
 
         self.VERSION = "1.0.0"
         self.index = 0
 
-        grid = QGridLayout()
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+
+        self.title_bar = QWidget()
+        self.title_bar.setFixedHeight(35)
+        self.title_bar.setStyleSheet("""
+            background-color: #1e1e1e;
+            border-bottom: 1px solid #444;
+        """)
+        title_layout = QHBoxLayout(self.title_bar)
+        title_layout.setContentsMargins(10, 0, 10, 0)
+        title_layout.setSpacing(8)
+
+        self.title_label = QLabel("  Franktorio's Research Scanner")
+        self.title_label.setStyleSheet("color: #ccc; font-weight: bold; font-size: 14px;")
+        self.title_label.setAlignment(Qt.AlignVCenter)
+
+        self.min_btn = QPushButton("—")
+        self.min_btn.setFixedSize(25, 25)
+        self.min_btn.setStyleSheet("color: #ccc; background: transparent; border: none;")
+        self.min_btn.clicked.connect(self.showMinimized)
+
+        self.close_btn = QPushButton("✕")
+        self.close_btn.setFixedSize(25, 25)
+        self.close_btn.setStyleSheet("color: #ccc; background: transparent; border: none;")
+        self.close_btn.clicked.connect(self.close)
+
+        self.min_btn.setStyleSheet("""
+            QPushButton {
+                color: #ccc;
+                background: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: #555;
+            }
+            QPushButton:pressed {
+                background-color: #333;
+            }
+        """)
+
+        self.close_btn.setStyleSheet("""
+            QPushButton {
+                color: #ccc;
+                background: transparent;
+                border: none;
+            }
+            QPushButton:hover {
+                background-color: red;
+                color: white;
+            }
+            QPushButton:pressed {
+                background-color: darkred;
+            }
+        """)
+
+
+        title_layout.addWidget(self.title_label)
+        title_layout.addStretch()
+        title_layout.addWidget(self.min_btn)
+        title_layout.addWidget(self.close_btn)
+
+
+        self.content_widget = QWidget()
+        grid = QGridLayout(self.content_widget)
         grid.setSpacing(12)
 
-        # === Timers ===
         self.base_timer_label = QLabel("Base Timer: 00:00")
         self.node_timer_label = QLabel("Node Timer: 00:00")
         timer_style = "font-size: 20px; font-weight: bold; color: #ddd;"
         self.base_timer_label.setStyleSheet(timer_style)
         self.node_timer_label.setStyleSheet(timer_style)
 
-        # === Server Info Grid ===
         self.server_info_container = QWidget()
         server_grid = QGridLayout()
         server_grid.setContentsMargins(10, 10, 10, 10)
@@ -92,7 +161,6 @@ class PressureScannerUI(QWidget):
         self.uptime_value.setStyleSheet(value_style)
         self.uptime_value.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
-        # Add labels and values to server grid
         server_grid.addWidget(players_label, 0, 0)
         server_grid.addWidget(self.players_value, 0, 1)
         server_grid.addWidget(server_label, 1, 0)
@@ -100,7 +168,6 @@ class PressureScannerUI(QWidget):
         server_grid.addWidget(uptime_label, 2, 0)
         server_grid.addWidget(self.uptime_value, 2, 1)
 
-        # Flicker buttons
         self.late_flicker_btn = QPushButton("Late Flicker")
         self.door_flicker_btn = QPushButton("Door Flicker")
 
@@ -156,7 +223,6 @@ class PressureScannerUI(QWidget):
 
         grid.addWidget(left_top_container, 0, 0)
 
-        # === Console log ===
         self.console_log = QTextEdit()
         self.console_log.setReadOnly(True)
         self.console_log.setPlaceholderText("Console logs will appear here...")
@@ -171,7 +237,6 @@ class PressureScannerUI(QWidget):
         """)
         grid.addWidget(self.console_log, 1, 0)
 
-        # --- Start / Stop Buttons bottom-left ---
         self.start_btn = QPushButton("Start Scanner")
         self.stop_btn = QPushButton("Stop Scanner")
         button_style = """
@@ -183,16 +248,24 @@ class PressureScannerUI(QWidget):
                 padding: 8px 18px;
                 font-weight: bold;
             }
-            QPushButton:hover {
+            QPushButton:hover:!disabled {
                 background-color: #444;
                 border-color: #888;
             }
-            QPushButton:pressed {
+            QPushButton:pressed:!disabled {
                 background-color: #222;
+            }
+            QPushButton:disabled {
+                background-color: #222;
+                color: #666;
+                border-color: #444;
             }
         """
         self.start_btn.setStyleSheet(button_style)
+        
         self.stop_btn.setStyleSheet(button_style)
+        self.stop_btn.setEnabled(False)
+
 
         left_buttons_layout = QHBoxLayout()
         left_buttons_layout.setSpacing(12)
@@ -203,7 +276,6 @@ class PressureScannerUI(QWidget):
         left_buttons_container.setStyleSheet("padding-top: 8px;")
         grid.addWidget(left_buttons_container, 2, 0)
 
-        # --- Right side: Room title + 4 image boxes ---
         image_section_layout = QVBoxLayout()
         image_section_layout.setSpacing(8)
         image_section_layout.setContentsMargins(0, 0, 0, 0)
@@ -235,13 +307,11 @@ class PressureScannerUI(QWidget):
 
         image_section_layout.addWidget(self.image_grid_container)
 
-        # Add full section to grid
         image_section_widget = QWidget()
         image_section_widget.setLayout(image_section_layout)
         grid.addWidget(image_section_widget, 0, 1)
 
 
-        # --- Notes box below images ---
         self.notes_box = QTextEdit()
         self.notes_box.setPlaceholderText("Notes about the image...")
         self.notes_box.setStyleSheet("""
@@ -254,7 +324,6 @@ class PressureScannerUI(QWidget):
         """)
         grid.addWidget(self.notes_box, 1, 1)
 
-        # --- Bottom-right buttons ---
         self.notifications_btn = QPushButton("Notifications: ON")
         self.notifications_btn.setCheckable(True)
         self.notifications_btn.setChecked(True)
@@ -273,18 +342,21 @@ class PressureScannerUI(QWidget):
         right_buttons_container.setStyleSheet("padding-top: 8px;")
         grid.addWidget(right_buttons_container, 2, 1)
 
-        # === Grid stretch ===
-        grid.setRowStretch(0, 4)  # Give more vertical space to top row (images + timers)
-        grid.setRowStretch(1, 2)  # Notes box gets less vertical space
-        grid.setRowStretch(2, 0)  # Buttons fixed height
+        grid.setRowStretch(0, 4)
+        grid.setRowStretch(1, 2)
+        grid.setRowStretch(2, 0)
         grid.setColumnStretch(0, 2)
         grid.setColumnStretch(1, 3)
 
         self.setLayout(grid)
         self.setStyleSheet("background-color: #121212;")
 
-        # Connections example for testing image loading
         self.notifications_btn.toggled.connect(self.toggle_notifications)
+
+        main_layout.addWidget(self.title_bar)
+        main_layout.addWidget(self.content_widget)
+        self.setLayout(main_layout)
+
 
     def toggle_notifications(self, checked):
         self.notifications_btn.setText("Notifications: ON" if checked else "Notifications: OFF")
@@ -323,10 +395,6 @@ class PressureScannerUI(QWidget):
             self.image_boxes[index].label.setText(text)
 
     def update_image_from_url(self, index: int, url: str):
-        """
-        Downloads image data from the given URL and updates the image box at the specified index.
-        If the download or loading fails, shows 'No Image Loaded' text.
-        """
         if not (0 <= index < len(self.image_boxes)):
             return
 
@@ -344,6 +412,26 @@ class PressureScannerUI(QWidget):
             pixmap = QPixmap.fromImage(image)
             self.image_boxes[index].setPixmap(pixmap)
         except Exception as e:
-            print(f"Failed to load image from URL {url}: {e}")
             self.image_boxes[index].label.setText("No Image Loaded")
             self.image_boxes[index].label.setPixmap(QPixmap())
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.title_bar.geometry().contains(event.pos()):
+            self.drag_position = event.globalPos() - self.frameGeometry().topLeft()
+            event.accept()
+
+    def mouseMoveEvent(self, event):
+        if event.buttons() == Qt.LeftButton and hasattr(self, 'drag_position'):
+            self.move(event.globalPos() - self.drag_position)
+            event.accept()
+
+    def pop_out(self):
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
+        self.show()
+        self.raise_()
+        self.activateWindow()
+
+    def normal_window(self):
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.show()
+
